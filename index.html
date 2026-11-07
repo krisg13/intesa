@@ -840,7 +840,7 @@ function startEdit(n){
 function renderEdit(n){
   const d=draft, isYou=n===YOU;
   const conns=[...d.links].map(id=>byId.get(id)).filter(Boolean).sort((a,b)=>a.degree-b.degree||a.name.localeCompare(b.name));
-  const dict = (n.isNew && dictate) ? `<div class="dictate"><p class="status${dictate.listening?' live':''}">${esc(dictate.status||'')}</p><textarea class="heard" rows="2" placeholder="Met Maya Chen last night at SXSW with Nadia Rao. She works at Notion and is interesting because she ran design systems at Figma." aria-label="What you said">${esc(dictate.text||'')}</textarea><div class="acts">${SR?`<button type="button" class="act" id="againBtn">${dictate.listening?'Stop listening':'Listen again'}</button>`:''}<button type="button" class="act" id="parseBtn">Fill in from this</button></div></div>` : '';
+  const dict = (n.isNew && dictate) ? `<div class="dictate"><p class="status${dictate.listening?' live':''}">${esc(dictate.status||'')}</p><textarea class="heard" rows="2" placeholder="Met Maya Chen last night at SXSW with Nadia Rao. She works at Notion and is interesting because she ran design systems at Figma." aria-label="What you said">${esc(dictate.text||'')}</textarea><div class="acts">${canListen?`<button type="button" class="act" id="againBtn">${dictate.listening?'Stop listening':'Listen again'}</button>`:''}<button type="button" class="act" id="parseBtn">Fill in from this</button></div></div>` : '';
   panelBody.innerHTML = `<form class="edit" autocomplete="off">${dict}
     ${isYou?`<h2>You</h2>`:`<input class="name" name="name" value="${esc(d.name)}" placeholder="Name" aria-label="Name" required>`}
     <label><span>Title</span><input name="title" value="${esc(d.title)}" placeholder="Role"></label>
@@ -962,34 +962,56 @@ function showSave(n){
   sec.querySelector('#vcfDone').addEventListener('click',()=>sec.remove());
 }
 // Contact Picker where the browser has one; elsewhere, say so plainly
-const canPickContacts = !!(navigator.contacts && typeof navigator.contacts.select==='function');
+const NATIVE = window.intesaNative || null;
+const canPickContacts = !!NATIVE || !!(navigator.contacts && typeof navigator.contacts.select==='function');
 const importNote=document.getElementById('importNote');
 function say(msg){ importNote.hidden=!msg; importNote.textContent=msg||''; }
 async function importContacts(){
   if (!canPickContacts){ say('This browser can’t read your contacts. The Intesa app on your phone asks whenever you add one; here, add people by name.'); return; }
+  if (NATIVE){ NATIVE.pickContacts(); return; }
   try{
-    const picked=await navigator.contacts.select(['name','email','tel'],{multiple:true}); let last=null, added=0;
-    for (const c of picked){ const name=((c.name&&c.name[0])||'').trim(); if (!name) continue;
-      const existing=nodes.find(p=>p.name.toLowerCase()===name.toLowerCase()); if (existing){ last=existing; continue; }
-      last=createPerson({ name, email:(c.email&&c.email[0])||'', phone:(c.tel&&c.tel[0])||'', sources:['Phone contacts'] }); added++; }
-    if (added){ saveStore(); graphChanged(); }
-    if (last) select(last);
-    say(picked.length ? (added ? `${added} added from your contacts.` : 'Everyone you picked is already on the map.') : '');
+    const picked=await navigator.contacts.select(['name','email','tel'],{multiple:true});
+    addContacts(picked.map(c=>({ name:((c.name&&c.name[0])||'').trim(), email:(c.email&&c.email[0])||'', phone:(c.tel&&c.tel[0])||'' })));
   }catch(e){ say('Could not read your contacts.'); }
+}
+function addContacts(items){
+  let last=null, added=0;
+  for (const c of items){ const name=(c.name||'').trim(); if (!name) continue;
+    const existing=nodes.find(p=>p.name.toLowerCase()===name.toLowerCase()); if (existing){ last=existing; continue; }
+    last=createPerson({ name, email:c.email||'', phone:c.phone||'', company:c.company||'', title:c.title||'', sources:['Phone contacts'] }); added++; }
+  if (added){ saveStore(); graphChanged(); }
+  if (last) select(last);
+  say(items.length ? (added ? `${added} added from your contacts.` : 'Everyone you picked is already on the map.') : '');
 }
 document.getElementById('addNew').addEventListener('click',startNew);
 // ───────────────────────── adding by voice ─────────────────────────
 // Speech becomes a sentence; the sentence becomes fields. Claude parses it inside the artifact viewer; a rule parser does it everywhere else.
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
-let dictate=null, rec=null;
+const SR = NATIVE ? null : (window.SpeechRecognition || window.webkitSpeechRecognition || null);
+const canListen = !!(NATIVE || SR);
+let dictate=null, rec=null, nativeOn=false;
+// what the recogniser should expect: the people, companies and places already on the map, nearest first
+function listenTerms(){ const out=[], seen=new Set(); const add=v=>{ v=(v||'').trim(); if (v && !seen.has(v.toLowerCase())){ seen.add(v.toLowerCase()); out.push(v); } };
+  nodes.filter(n=>n.degree===1).forEach(n=>add(n.name)); nodes.filter(n=>n.degree===2).forEach(n=>add(n.name));
+  nodes.forEach(n=>{ add(n.company); add(n.where); }); nodes.forEach(n=>{ add(n.school); add(n.city); }); return out.slice(0,100); }
+window.intesaNativeEvent = ev => {
+  if (!ev || typeof ev!=='object') return;
+  if (ev.type==='contacts'){ addContacts(Array.isArray(ev.items)?ev.items:[]); return; }
+  if (!dictate) return;
+  if (ev.type==='status'){ dictate.status=ev.message||''; updateDictate(); }
+  else if (ev.type==='partial'){ dictate.text=ev.text||''; updateDictate(); }
+  else if (ev.type==='final'){ nativeOn=false; dictate.listening=false; const t=(ev.text||dictate.text||'').trim(); if (t){ dictate.status='Heard you.'; updateDictate(); applyUtterance(t); } else { dictate.status='Heard nothing. Listen again, or type it.'; updateDictate(); } }
+  else if (ev.type==='error'){ nativeOn=false; dictate.listening=false; dictate.status=ev.message||'Could not hear you. Type it instead.'; updateDictate(); }
+};
 function startVoice(){
   startNew(); dictate={text:'',listening:false,status:''}; renderEdit(editing);
-  if (SR) listen(); else { dictate.status='This browser cannot listen. Type what you would have said, then fill in from it.'; updateDictate(); panelBody.querySelector('.heard').focus(); }
+  if (canListen) listen(); else { dictate.status='This browser cannot listen. Type what you would have said, then fill in from it.'; updateDictate(); panelBody.querySelector('.heard').focus(); }
 }
 function updateDictate(){ const el=panelBody.querySelector('.dictate'); if (!el||!dictate) return; const st=el.querySelector('.status'); st.textContent=dictate.status||''; st.classList.toggle('live',!!dictate.listening); const h=el.querySelector('.heard'); if (document.activeElement!==h){ h.value=dictate.text||''; h.style.height='auto'; h.style.height=(h.scrollHeight+2)+'px'; } const ag=el.querySelector('#againBtn'); if (ag) ag.textContent=dictate.listening?'Stop listening':'Listen again'; }
-function stopListening(){ if (rec){ try{ rec.onend=null; rec.stop(); }catch(e){} rec=null; } if (dictate){ dictate.listening=false; } }
+function stopListening(){ if (NATIVE && nativeOn){ nativeOn=false; NATIVE.stopListening(); } if (rec){ try{ rec.onend=null; rec.stop(); }catch(e){} rec=null; } if (dictate){ dictate.listening=false; } }
 function listen(){
-  if (!SR||!dictate) return; stopListening();
+  if (!dictate) return; stopListening();
+  if (NATIVE){ nativeOn=true; dictate.listening=true; dictate.status='Listening…'; updateDictate(); NATIVE.startListening(JSON.stringify({terms:listenTerms(), locale:navigator.language||'en-US'})); return; }
+  if (!SR) return;
   try{
     rec=new SR(); rec.lang=navigator.language||'en-US'; rec.interimResults=true; rec.continuous=false; rec.maxAlternatives=1;
     let finalText='';

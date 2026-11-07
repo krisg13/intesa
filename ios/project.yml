@@ -1,0 +1,37 @@
+name: Intesa
+options:
+  bundleIdPrefix: ai.auvo
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+targets:
+  Intesa:
+    type: application
+    platform: iOS
+    sources:
+      - path: Intesa
+        excludes:
+          - "Web/**"
+      - path: Intesa/Web
+        type: folder
+    info:
+      path: Intesa/Info.plist
+      properties:
+        CFBundleDisplayName: Intesa
+        CFBundleShortVersionString: "0.1"
+        CFBundleVersion: "1"
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UIViewControllerBasedStatusBarAppearance: true
+        NSMicrophoneUsageDescription: Intesa listens when you tap Speak, so you can describe someone you just met.
+        NSSpeechRecognitionUsageDescription: What you say is turned into text on this phone to fill in a new person.
+        NSContactsUsageDescription: Intesa adds the people you choose from your contacts to your map.
+    settings:
+      base:
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GENERATE_INFOPLIST_FILE: false
+        CODE_SIGN_STYLE: Automatic
+        INFOPLIST_KEY_UILaunchScreen_Generation: true

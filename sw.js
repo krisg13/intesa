@@ -1,5 +1,5 @@
-// Lattice service worker: keep the app shell so it opens offline, and refresh it in the background.
-const VERSION = 'lattice-v1';
+// Intesa service worker: keep the app shell so it opens offline, and refresh it in the background.
+const VERSION = 'intesa-v1';
 const SHELL = ['./', './index.html', './manifest.webmanifest',
   './fonts/et-book-roman-line-figures.woff', './fonts/et-book-display-italic-old-style-figures.woff', './fonts/et-book-bold-line-figures.woff',
   './icons/icon-192.png', './icons/icon-512.png',

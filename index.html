@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Lattice</title>
+<title>Intesa</title>
 <meta name="theme-color" content="#fffff8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#151515" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Lattice">
+<meta name="apple-mobile-web-app-title" content="Intesa">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <meta name="mobile-web-app-capable" content="yes">
 <style>
-/* Monograph, phone first. On a phone the graph is the whole screen, with a thin masthead over it and a bar in thumb reach; a person opens as a sheet
+/* Intesa, Monograph, phone first. On a phone the graph is the whole screen, with a thin masthead over it and a bar in thumb reach; a person opens as a sheet
    that peeks, then fills the screen. On a wide screen the same pieces settle into Figure 1 on the left and an essay column on the right, in ET Book,
    with provenance in sidenotes. Typography does all the work: no boxes, no pills, no cards, no icons. Paper first; a dark plate when the system asks. */
 @font-face{font-family:et-book;font-weight:400;font-style:normal;src:url(fonts/et-book-roman-line-figures.woff) format("woff")}
@@ -278,7 +278,7 @@ label.margin-toggle:not(.sidenote-number){display:none}
   <div id="side">
   <header class="mast">
     <div class="top">
-      <div class="wordmark">Lattice <small>your network, 100 people</small></div>
+      <div class="wordmark">Intesa <small>your network, 100 people</small></div>
       <div class="search">
         <span class="lbl">Look up</span>
         <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="a name, a place, a word" aria-label="Search your network">
@@ -310,7 +310,7 @@ label.margin-toggle:not(.sidenote-number){display:none}
     </article>
 
     <div id="empty" class="text">
-      <blockquote><p>A map of the people you know, drawn from your own mail, calendar and notes. Choose anyone in the figure, or look up a name, a place or a word.</p><footer>Lattice</footer></blockquote>
+      <blockquote><p>A map of the people you know, drawn from your own mail, calendar and notes. Choose anyone in the figure, or look up a name, a place or a word.</p><footer>Intesa</footer></blockquote>
     </div>
   </div></main>
   </div>
@@ -683,13 +683,13 @@ function sn(t){ snN++; return `<label for="sn-${snN}" class="margin-toggle siden
 function lead(n){
   const first = n.name.split(' ')[0]||n.name; const v=n.via, who=v&&byId.get(v.id); const c=[0,0,0,0]; nodes.forEach(m=>c[m.degree]++);
   const pl = (k,w) => `${k} ${w}${k>1?'s':''}`;
-  if (n.degree===0) return `<p><span class="newthought">The centre of the map.</span> ${c[1]} people you know first-hand, ${c[2]} seen beside them in your mail and calendar, and ${c[3]} who exist only as names. ${sn('Nothing here comes from other users. Lattice reads your own contacts, mail, calendar and notes.')}</p>`;
+  if (n.degree===0) return `<p><span class="newthought">The centre of the map.</span> ${c[1]} people you know first-hand, ${c[2]} seen beside them in your mail and calendar, and ${c[3]} who exist only as names. ${sn('Nothing here comes from other users. Intesa reads your own contacts, mail, calendar and notes.')}</p>`;
   if (n.degree===1){
     const firstSeen = who ? (v.how==='cc'?`first cc’d with ${esc(who.name)}`:v.how==='invite'?`first on a calendar invite with ${esc(who.name)}`:v.how==='group'?`first in a group text with ${esc(who.name)}`:v.how==='note'?`first in your note on ${esc(who.name)}`:v.how==='intro'?`introduced by ${esc(who.name)}`:`first mentioned by ${esc(who.name)}`) : '';
     const mail = n.emailCount ? `${n.emailCount} emails since, the last on ${esc(n.lastContact)}.` : '';
     if (n.where) return `<p><span class="newthought">You met at ${esc(n.where)}</span>${n.when?`, ${esc(n.when)}`:''}.${sn(`Direct. ${mail||'Added by you.'}${firstSeen?' '+firstSeen[0].toUpperCase()+firstSeen.slice(1)+'.':''}`)} ${esc(first)} is one of ${c[1]} people you know first-hand.</p>`;
     if (n.emailCount) return `<p><span class="newthought">You know ${esc(first)} first-hand.</span> ${mail}${sn(`Direct. ${firstSeen?firstSeen[0].toUpperCase()+firstSeen.slice(1)+'.':'One of '+c[1]+' people in the first ring.'}`)}</p>`;
-    return `<p><span class="newthought">You added ${esc(first)} yourself.</span> ${firstSeen?`Lattice had seen them before that, ${firstSeen}.`:'Nothing in your mail or calendar yet.'}${sn('Direct. Counted in the first ring because you said so.')}</p>`;
+    return `<p><span class="newthought">You added ${esc(first)} yourself.</span> ${firstSeen?`Intesa had seen them before that, ${firstSeen}.`:'Nothing in your mail or calendar yet.'}${sn('Direct. Counted in the first ring because you said so.')}</p>`;
   }
   if (n.degree===2){
     if (!who) return `<p><span class="newthought">You have never written to ${esc(first)}.</span> You placed them in the second ring yourself.${sn('Seen. Present around people you know, never addressed directly.')}</p>`;
@@ -937,8 +937,8 @@ function startNew(){ setFocus(true);
 function vcard(n){
   const v=x=>String(x||'').replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/,/g,'\\,').replace(/;/g,'\\;');
   const parts=n.name.trim().split(/\s+/); const first=parts.shift()||''; const last=parts.join(' ');
-  const note=['Added from Lattice', n.where?`Met at ${n.where}${n.when?', '+n.when:''}`:'', n.school?'School: '+n.school:'', n.tags.length?'Interests: '+n.tags.join(', '):''].filter(Boolean).join('. ');
-  return ['BEGIN:VCARD','VERSION:3.0',`N:${v(last)};${v(first)};;;`,`FN:${v(n.name)}`, n.company?`ORG:${v(n.company)}`:'', n.title?`TITLE:${v(n.title)}`:'', n.workEmail?`EMAIL;TYPE=INTERNET,WORK:${v(n.workEmail)}`:'', n.personalEmail?`EMAIL;TYPE=INTERNET,HOME:${v(n.personalEmail)}`:'', n.phone?`TEL;TYPE=CELL:${v(n.phone)}`:'', ...[['linkedin','linkedin','https://www.linkedin.com/in/'],['facebook','facebook','https://www.facebook.com/'],['instagram','instagram','https://www.instagram.com/'],['xhandle','twitter','https://x.com/']].filter(([k])=>n[k]).map(([k,type,base])=>`X-SOCIALPROFILE;TYPE=${type}:${v(socialUrl(n[k],base))}`), n.city?`ADR;TYPE=WORK:;;;${v(n.city)};;;`:'', `NOTE:${v(note)}`, `X-LATTICE-ID:${n.id}`,'END:VCARD',''].filter(x=>x!=='' || false).join('\r\n')+'\r\n';
+  const note=['Added from Intesa', n.where?`Met at ${n.where}${n.when?', '+n.when:''}`:'', n.school?'School: '+n.school:'', n.tags.length?'Interests: '+n.tags.join(', '):''].filter(Boolean).join('. ');
+  return ['BEGIN:VCARD','VERSION:3.0',`N:${v(last)};${v(first)};;;`,`FN:${v(n.name)}`, n.company?`ORG:${v(n.company)}`:'', n.title?`TITLE:${v(n.title)}`:'', n.workEmail?`EMAIL;TYPE=INTERNET,WORK:${v(n.workEmail)}`:'', n.personalEmail?`EMAIL;TYPE=INTERNET,HOME:${v(n.personalEmail)}`:'', n.phone?`TEL;TYPE=CELL:${v(n.phone)}`:'', ...[['linkedin','linkedin','https://www.linkedin.com/in/'],['facebook','facebook','https://www.facebook.com/'],['instagram','instagram','https://www.instagram.com/'],['xhandle','twitter','https://x.com/']].filter(([k])=>n[k]).map(([k,type,base])=>`X-SOCIALPROFILE;TYPE=${type}:${v(socialUrl(n[k],base))}`), n.city?`ADR;TYPE=WORK:;;;${v(n.city)};;;`:'', `NOTE:${v(note)}`, `X-INTESA-ID:${n.id}`,'END:VCARD',''].filter(x=>x!=='' || false).join('\r\n')+'\r\n';
 }
 function downloadVcf(n){
   const blob=new Blob([vcard(n)],{type:'text/vcard;charset=utf-8'}); const url=URL.createObjectURL(blob);
@@ -966,7 +966,7 @@ const canPickContacts = !!(navigator.contacts && typeof navigator.contacts.selec
 const importNote=document.getElementById('importNote');
 function say(msg){ importNote.hidden=!msg; importNote.textContent=msg||''; }
 async function importContacts(){
-  if (!canPickContacts){ say('This browser can’t read your contacts. The Lattice app on your phone asks whenever you add one; here, add people by name.'); return; }
+  if (!canPickContacts){ say('This browser can’t read your contacts. The Intesa app on your phone asks whenever you add one; here, add people by name.'); return; }
   try{
     const picked=await navigator.contacts.select(['name','email','tel'],{multiple:true}); let last=null, added=0;
     for (const c of picked){ const name=((c.name&&c.name[0])||'').trim(); if (!name) continue;
@@ -994,7 +994,7 @@ function listen(){
     rec=new SR(); rec.lang=navigator.language||'en-US'; rec.interimResults=true; rec.continuous=false; rec.maxAlternatives=1;
     let finalText='';
     rec.onresult=e=>{ let t=''; for (let i=0;i<e.results.length;i++){ t+=e.results[i][0].transcript; if (e.results[i].isFinal) finalText=t; } dictate.text=t; updateDictate(); };
-    rec.onerror=e=>{ dictate.listening=false; dictate.status = e.error==='not-allowed'||e.error==='service-not-allowed' ? 'The microphone is blocked here. Type it instead, or open Lattice in its own tab.' : e.error==='no-speech' ? 'Heard nothing. Listen again, or type it.' : 'Could not hear you. Type it instead.'; updateDictate(); };
+    rec.onerror=e=>{ dictate.listening=false; dictate.status = e.error==='not-allowed'||e.error==='service-not-allowed' ? 'The microphone is blocked here. Type it instead, or open Intesa in its own tab.' : e.error==='no-speech' ? 'Heard nothing. Listen again, or type it.' : 'Could not hear you. Type it instead.'; updateDictate(); };
     rec.onend=()=>{ dictate.listening=false; const t=(finalText||dictate.text||'').trim(); if (t){ dictate.status='Heard you.'; updateDictate(); applyUtterance(t); } else { if (!dictate.status||dictate.status==='Listening…') dictate.status='Heard nothing. Listen again, or type it.'; updateDictate(); } rec=null; };
     rec.start(); dictate.listening=true; dictate.status='Listening…'; updateDictate();
   }catch(e){ dictate.listening=false; dictate.status='The microphone is unavailable. Type it instead.'; updateDictate(); }

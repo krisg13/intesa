@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Intesa · Allow access</title>
+<meta name="color-scheme" content="light dark">
+<style>
+@font-face{font-family:et-book;font-weight:400;font-style:normal;src:url(../../fonts/et-book-roman-line-figures.woff) format("woff")}
+@font-face{font-family:et-book;font-weight:400;font-style:italic;src:url(../../fonts/et-book-display-italic-old-style-figures.woff) format("woff")}
+@font-face{font-family:et-book;font-weight:700;font-style:normal;src:url(../../fonts/et-book-bold-line-figures.woff) format("woff")}
+:root{--bg:#fffff8;--fg:#111;--muted:#6b6b66;--faint:#a8a8a2;--rule:rgba(17,17,17,.18)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151515;--fg:#ddd;--muted:#999;--faint:#666;--rule:rgba(221,221,221,.2)}}
+:root[data-theme="dark"]{--bg:#151515;--fg:#ddd;--muted:#999;--faint:#666;--rule:rgba(221,221,221,.2)}
+html,body{margin:0;background:var(--bg);color:var(--fg)}
+body{font-family:et-book,Palatino,"Palatino Linotype",Georgia,serif;font-size:1.15rem;line-height:1.55;-webkit-font-smoothing:antialiased;padding:max(24px,env(safe-area-inset-top)) 16px 48px}
+main{max-width:560px;margin:0 auto}
+.wordmark{font-variant:small-caps;letter-spacing:.22em;font-size:1rem;margin:12px 0 36px}
+h1{font-weight:400;font-style:italic;font-size:2rem;line-height:1.15;margin:0 0 18px}
+p{margin:0 0 14px}
+.note{color:var(--muted);font-size:1rem;font-style:italic}
+dl{margin:22px 0;border-top:1px solid var(--rule)}
+dl div{display:grid;grid-template-columns:9rem 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--rule)}
+dt{font-variant:small-caps;letter-spacing:.08em;color:var(--muted);font-size:1rem}
+dd{margin:0;word-break:break-all}
+label{display:grid;grid-template-columns:9rem 1fr;gap:12px;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--rule)}
+label span{font-variant:small-caps;letter-spacing:.08em;color:var(--muted);font-size:1rem}
+input{font:inherit;font-size:max(1.1rem,16px);color:var(--fg);background:transparent;border:0;border-bottom:1px solid var(--rule);border-radius:0;outline:none;padding:0 0 3px;width:100%;box-sizing:border-box;-webkit-appearance:none}
+input::placeholder{color:var(--faint);font-style:italic}
+.acts{display:flex;gap:26px;margin-top:26px;flex-wrap:wrap}
+button{font:inherit;font-variant:small-caps;letter-spacing:.08em;font-size:1.05rem;background:none;border:0;border-bottom:1px solid var(--rule);padding:0 0 2px;color:var(--fg);cursor:pointer}
+button:disabled{color:var(--faint);cursor:default}
+.err{color:#8a4b00}
+.hid{display:none}
+</style>
+</head>
+<body>
+<main>
+  <div class="wordmark">Intesa</div>
+  <section id="view"><p class="note">One moment…</p></section>
+</main>
+<script src="../../config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.108.2/dist/umd/supabase.min.js"></script>
+<script>
+(()=>{
+const view=document.getElementById('view');
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const CFG=window.INTESA_SUPABASE;
+if (!CFG||!CFG.url){ view.innerHTML='<h1>Nothing to allow</h1><p class="note">This copy of Intesa has no account service.</p>'; return; }
+const sb=supabase.createClient(CFG.url,CFG.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+const authId=new URLSearchParams(location.search).get('authorization_id');
+const show=h=>{ view.innerHTML=h; };
+const fail=m=>show(`<h1>That did not work</h1><p class="err">${esc(m)}</p><p class="note">Start again from the app that asked to connect.</p>`);
+
+async function main(){
+  if (!authId) return show('<h1>Nothing to allow</h1><p class="note">Open this page from Claude, Grok or another app that is asking to connect to Intesa.</p>');
+  const { data:{ session } }=await sb.auth.getSession();
+  if (!session) return signIn();
+  const { data, error }=await sb.auth.oauth.getAuthorizationDetails(authId);
+  if (error) return fail(error.message);
+  if (!('authorization_id' in data)){ location.replace(data.redirect_url); return; }
+  const scopes=(data.scope||'').split(' ').filter(Boolean);
+  show(`<h1>Let <em>${esc(data.client.name||'this app')}</em> use your map?</h1>
+    <p>It will act as you: read the people on your map, your notes and to-dos, and add or change them. Everything it adds is marked with its name, and you can revoke it any time.</p>
+    <dl><div><dt>App</dt><dd>${esc(data.client.name||'Unnamed client')}</dd></div>
+      <div><dt>Returns to</dt><dd>${esc(data.redirect_uri)}</dd></div>
+      <div><dt>Signed in as</dt><dd>${esc(data.user&&data.user.email||session.user.email||'')}</dd></div>
+      ${scopes.length?`<div><dt>Scopes</dt><dd>${esc(scopes.join(', '))}</dd></div>`:''}</dl>
+    <p class="note">Only allow apps you recognise.</p>
+    <p class="err hid" id="msg"></p>
+    <div class="acts"><button id="allow">Allow</button><button id="deny">Deny</button><button id="switch">Not you? Sign in as someone else</button></div>`);
+  const msg=document.getElementById('msg'); const btns=[...view.querySelectorAll('button')];
+  const decide=async approve=>{ btns.forEach(b=>b.disabled=true);
+    const r=approve ? await sb.auth.oauth.approveAuthorization(authId,{skipBrowserRedirect:true}) : await sb.auth.oauth.denyAuthorization(authId,{skipBrowserRedirect:true});
+    if (r.error){ msg.classList.remove('hid'); msg.textContent=r.error.message; btns.forEach(b=>b.disabled=false); return; }
+    if (!r.data||!r.data.redirect_url){ msg.classList.remove('hid'); msg.textContent='The server did not say where to return. Start again from the app.'; btns.forEach(b=>b.disabled=false); return; }
+    location.assign(r.data.redirect_url); };
+  document.getElementById('allow').addEventListener('click',()=>decide(true));
+  document.getElementById('deny').addEventListener('click',()=>decide(false));
+  document.getElementById('switch').addEventListener('click',async()=>{ await sb.auth.signOut(); signIn(); });
+}
+
+function signIn(){
+  let email='';
+  const step1=()=>{ show(`<h1>Sign in to Intesa</h1><p class="note">An app is asking to connect to your map. Sign in first. We email you a six-digit code; there is no password.</p>
+      <form id="f"><label><span>Email</span><input name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" required value="${esc(email)}"></label>
+      <p class="err hid" id="msg"></p><div class="acts"><button type="submit">Send code</button></div></form>`);
+    const f=document.getElementById('f'), msg=document.getElementById('msg'); f.email.focus();
+    f.addEventListener('submit',async ev=>{ ev.preventDefault(); email=f.email.value.trim(); msg.classList.remove('hid'); msg.textContent='Sending…';
+      const { error }=await sb.auth.signInWithOtp({ email, options:{ shouldCreateUser:true } }); if (error){ msg.textContent=error.message; return; } step2(); }); };
+  const step2=()=>{ show(`<h1>Check your mail</h1><p class="note">We sent a code to <b>${esc(email)}</b>.</p>
+      <form id="f"><label><span>Code</span><input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="123456" required></label>
+      <p class="err hid" id="msg"></p><div class="acts"><button type="submit">Sign in</button><button type="button" id="back">Different email</button></div></form>`);
+    const f=document.getElementById('f'), msg=document.getElementById('msg'); f.code.focus();
+    document.getElementById('back').addEventListener('click',step1);
+    f.addEventListener('submit',async ev=>{ ev.preventDefault(); msg.classList.remove('hid'); msg.textContent='Checking…';
+      const { error }=await sb.auth.verifyOtp({ email, token:f.code.value.trim(), type:'email' }); if (error){ msg.textContent=error.message; return; } main(); }); };
+  step1();
+}
+main().catch(e=>fail(e.message||String(e)));
+})();
+</script>
+</body>
+</html>

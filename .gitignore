@@ -1,3 +1,6 @@
 ios/Intesa.xcodeproj/xcuserdata/
 ios/Intesa.xcodeproj/project.xcworkspace/xcuserdata/
 .DS_Store
+supabase/signing_keys.json
+supabase/.temp/
+supabase/functions/.env
